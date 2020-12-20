@@ -28,6 +28,10 @@ public:
     // add new data to linked list
     void add(T data);
 
+    // update the data at index 
+    // 0 <= index < size of list
+    void update(int index,T data);
+
     // add new data to linked list in sorted fashion
     void addSorted(T data,int (*comparator)(T, T) = comparator);
 
@@ -361,4 +365,23 @@ int LinkedList<T>::lastIndexOf(T data,int (*comparator)(T, T)) {
         temp = temp->next;
     }
     return lastIndex;
+};
+
+template <typename T>
+void LinkedList<T>::update(int index, T data) {
+    if(start == NULL || start->next == NULL || count == 0) {
+        throw "List empty";
+    }else if(index >= count) {
+        throw "Index cannot exceed the size";
+    }
+    int i = 0;
+    NODE<T> *temp = start->next;
+    while(temp != NULL && temp != end) {
+        if(i == index){
+            temp->data = data;
+            return;
+        }
+        i+=1;
+        temp = temp->next;
+    }
 };
