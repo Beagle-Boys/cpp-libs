@@ -34,3 +34,4 @@ struct NODE
     NODE<T> *next;
     NODE<T> *prev;
 };
+

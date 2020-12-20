@@ -40,6 +40,15 @@ public:
     // remove node at index
     T removeIndex(int index);
 
+    // first-index of data else -1
+    int indexOf(T data,int (*comparator)(T, T) = comparator);
+
+    // total occurences of data
+    int occurences(T data,int (*comparator)(T, T) = comparator);
+
+    // last index of data else -1
+    int lastIndexOf(T data,int (*comparator)(T, T) = comparator);
+
     // remove last node
     T pop();
 
@@ -301,4 +310,55 @@ void LinkedList<T>::clearAll() {
     start = NULL;
     end = NULL;
     count = 0;
+};
+
+template <typename T>
+int LinkedList<T>::indexOf(T data,int (*comparator)(T, T)) {
+    if(start == NULL || start->next == NULL || count == 0) {
+        return -1;
+    }
+    int index = 0;
+    NODE<T> *temp = start->next;
+    while(temp != NULL || temp != end) {
+        if(temp->equals(data,comparator)) {
+            return index;
+        }
+        index += 1;
+        temp = temp->next;
+    }
+    return -1;
+};
+
+template <typename T>
+int LinkedList<T>::occurences(T data,int (*comparator)(T, T)) {
+    if(start == NULL || start->next == NULL || count == 0) {
+        return 0;
+    }
+    int occs = 0;
+    NODE<T> *temp = start->next;
+    while(temp != NULL || temp != end) {
+        if(temp->equals(data,comparator)) {
+            occs += 1;
+        }
+        temp = temp->next;
+    }
+    return occs;
+};
+
+template <typename T>
+int LinkedList<T>::lastIndexOf(T data,int (*comparator)(T, T)) {
+    if(start == NULL || start->next == NULL || count == 0) {
+        return -1;
+    }
+    int index = 0;
+    int lastIndex = -1;
+    NODE<T> *temp = start->next;
+    while(temp != NULL || temp != end) {
+        if(temp->equals(data,comparator)) {
+            lastIndex = index;
+        }
+        index += 1;
+        temp = temp->next;
+    }
+    return lastIndex;
 };
