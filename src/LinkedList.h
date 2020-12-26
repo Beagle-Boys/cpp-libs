@@ -1,10 +1,12 @@
-#include "DAAL.h"
+#include "../lib/DSA.h"
 #include <iostream>
+#include <cstdarg>
 
 using namespace std;
 
-template<typename T>
-int comparator(T a, T b) {
+template <typename T>
+int comparator(T a, T b)
+{
     return a - b;
 };
 
@@ -22,18 +24,18 @@ private:
     NODE<T> *end;
 
 public:
-    // constructor to initializes 
+    // constructor to initializes
     LinkedList();
 
     // add new data to linked list
     void add(T data);
 
-    // update the data at index 
+    // update the data at index
     // 0 <= index < size of list
-    void update(int index,T data);
+    void update(int index, T data);
 
     // add new data to linked list in sorted fashion
-    void addSorted(T data,int (*comparator)(T, T) = comparator);
+    void addSorted(T data, int (*comparator)(T, T) = comparator);
 
     // returns size of list
     int size();
@@ -45,13 +47,22 @@ public:
     T removeIndex(int index);
 
     // first-index of data else -1
-    int indexOf(T data,int (*comparator)(T, T) = comparator);
+    int indexOf(T data, int (*comparator)(T, T) = comparator);
 
     // total occurences of data
-    int occurences(T data,int (*comparator)(T, T) = comparator);
+    int occurences(T data, int (*comparator)(T, T) = comparator);
 
     // last index of data else -1
-    int lastIndexOf(T data,int (*comparator)(T, T) = comparator);
+    int lastIndexOf(T data, int (*comparator)(T, T) = comparator);
+
+    // concat another linkedlist(s) to the end of this
+    //void concat(LinkedList<T>... items);
+
+    // replace first occurence of value with newvalue
+    void replace(T value, T newvalue, int (*comparator)(T, T) = comparator);
+
+    // replace all occurences of value with newvalue
+    void replaceAll(T value, T newvalue, int (*comparator)(T, T) = comparator);
 
     // remove last node
     T pop();
@@ -73,7 +84,7 @@ public:
 
     // clear the linked list
     void clearAll();
-    
+
     //remove from publish
     void printAll();
 };
@@ -116,7 +127,7 @@ void LinkedList<T>::add(T data)
 };
 
 template <typename T>
-void LinkedList<T>::addSorted(T data,int (*comparator)(T, T))
+void LinkedList<T>::addSorted(T data, int (*comparator)(T, T))
 {
     if (start == NULL)
     {
@@ -128,13 +139,15 @@ void LinkedList<T>::addSorted(T data,int (*comparator)(T, T))
     node->next = NULL;
     node->prev = NULL;
     NODE<T> *temp = start->next;
-    while (temp != NULL && temp != end) {
-        if(node->lessthanorequal(temp->data,comparator)) {
+    while (temp != NULL && temp != end)
+    {
+        if (temp->greaterthanorequal(node->data, comparator))
+        {
             node->prev = temp->prev;
             node->next = temp;
             node->prev->next = node;
             node->next->prev = node;
-            count+=1;
+            count += 1;
             return;
         }
         temp = temp->next;
@@ -143,7 +156,7 @@ void LinkedList<T>::addSorted(T data,int (*comparator)(T, T))
     node->prev = end->prev;
     node->prev->next = node;
     node->next->prev = node;
-    count+=1;
+    count += 1;
     return;
 };
 
@@ -167,7 +180,11 @@ void LinkedList<T>::remove(T data, int (*comparator)(T, T))
         {
             temp->prev->next = temp->next;
             temp->next->prev = temp->prev;
-            count-=1;
+            count -= 1;
+            /*if (start == NULL || start->next == NULL || count == 0 || end->prev == start)
+            {
+                onListEmptied();
+            }*/
             return;
         }
         temp = temp->next;
@@ -181,44 +198,80 @@ T LinkedList<T>::removeIndex(int index)
     {
         return NULL;
     }
-    NODE<T> *temp = start->next;
+    int distance_to_end = count - index;
+    NODE<T> *temp;
+    bool forward = true;
     int i = 0;
-    while (temp->next != NULL)
+    if (index < distance_to_end)
+    {
+        temp = start->next;
+    }
+    else
+    {
+        temp = end->prev;
+        forward = false;
+        i = count - 1;
+    }
+    while ((forward ? temp->next : temp->prev) != NULL)
     {
         if (i == index)
         {
             temp->prev->next = temp->next;
             temp->next->prev = temp->prev;
             count -= 1;
+            /*if (start == NULL || start->next == NULL || count == 0 || end->prev == start)
+            {
+                onListEmptied();
+            }*/
             return temp->data;
         }
-        temp = temp->next;
-        i += 1;
+        if (forward)
+        {
+            temp = temp->next;
+            i += 1;
+        }
+        else
+        {
+            temp = temp->prev;
+            i -= 1;
+        }
     }
     return NULL;
 };
 
 template <typename T>
-T LinkedList<T>::pop() {
-    if(count <= 0) {
+T LinkedList<T>::pop()
+{
+    if (count <= 0)
+    {
         return NULL;
     }
-    NODE<T>* popped = end->prev;
+    NODE<T> *popped = end->prev;
     end->prev->prev->next = end;
     end->prev = popped->prev;
-    count-=1;
+    count -= 1;
+    /*if (start == NULL || start->next == NULL || count == 0 || end->prev == start)
+    {
+        onListEmptied();
+    }*/
     return popped->data;
 };
 
 template <typename T>
-T LinkedList<T>::shift() {
-    if(count <= 0) {
+T LinkedList<T>::shift()
+{
+    if (count <= 0)
+    {
         return NULL;
     }
-    NODE<T>* popped = start->next;
+    NODE<T> *popped = start->next;
     start->next->next->prev = start;
     start->next = popped->next;
-    count-=1;
+    count -= 1;
+    /*if (start == NULL || start->next == NULL || count == 0 || end->prev == start)
+    {
+        onListEmptied();
+    }*/
     return popped->data;
 };
 
@@ -244,25 +297,45 @@ bool LinkedList<T>::includes(T data, int (*comparator)(T, T))
 template <typename T>
 T LinkedList<T>::get(int index)
 {
-    if (start == NULL || start->next == NULL)
+    if (start == NULL || start->next == NULL || index >= count)
     {
-        return NULL;
+        throw DSAException("EMPTY_LIST");
     }
-    NODE<T> *temp = start->next;
-    int i=0;
-    while (temp->next != NULL)
+    int distance_to_end = count - index;
+    NODE<T> *temp;
+    bool forward = true;
+    int i = 0;
+    if (index < distance_to_end)
     {
-        if (i==index)
+        temp = start->next;
+    }
+    else
+    {
+        temp = end->prev;
+        forward = false;
+        i = count - 1;
+    }
+    while ((forward ? temp->next : temp->prev) != NULL)
+    {
+        if (i == index)
         {
             return temp->data;
         }
-        i+=1;
-        temp = temp->next;
+        if (forward)
+        {
+            i += 1;
+            temp = temp->next;
+        }else {
+            i -= 1;
+            temp = temp->prev;
+        }
     }
+    return NULL;
 };
 
 template <typename T>
-LinkedList<T> LinkedList<T>::reverse() {
+LinkedList<T> LinkedList<T>::reverse()
+{
     LinkedList<T> reverselist;
     if (start == NULL || start->next == NULL || count == 0 || end->prev == NULL)
     {
@@ -278,7 +351,8 @@ LinkedList<T> LinkedList<T>::reverse() {
 };
 
 template <typename T>
-LinkedList<T> LinkedList<T>::sort(int (*comparator)(T, T)) {
+LinkedList<T> LinkedList<T>::sort(int (*comparator)(T, T))
+{
     LinkedList<T> sortedList;
     if (start == NULL || start->next == NULL || count == 0)
     {
@@ -287,44 +361,52 @@ LinkedList<T> LinkedList<T>::sort(int (*comparator)(T, T)) {
     NODE<T> *temp = start->next;
     while (temp != NULL && temp != end)
     {
-        sortedList.addSorted(temp->data,comparator);
+        sortedList.addSorted(temp->data, comparator);
         temp = temp->next;
     }
     return sortedList;
 };
 
 template <typename T>
-void LinkedList<T>::printAll() {
+void LinkedList<T>::printAll()
+{
     if (start == NULL || start->next == NULL || count == 0)
     {
         cout << "Empty List\n";
         return;
     }
+    int index = 0;
     NODE<T> *temp = start->next;
     while (temp != NULL && temp != end)
     {
-        cout << temp->data << " ";
+        cout << "(" << index << ")" << temp->data << ":" << this->get(index) << " ";
         temp = temp->next;
+        index += 1;
     }
     cout << "\n";
 };
 
 template <typename T>
-void LinkedList<T>::clearAll() {
+void LinkedList<T>::clearAll()
+{
     start = NULL;
     end = NULL;
     count = 0;
 };
 
 template <typename T>
-int LinkedList<T>::indexOf(T data,int (*comparator)(T, T)) {
-    if(start == NULL || start->next == NULL || count == 0) {
+int LinkedList<T>::indexOf(T data, int (*comparator)(T, T))
+{
+    if (start == NULL || start->next == NULL || count == 0)
+    {
         return -1;
     }
     int index = 0;
     NODE<T> *temp = start->next;
-    while(temp != NULL || temp != end) {
-        if(temp->equals(data,comparator)) {
+    while (temp != NULL && temp != end)
+    {
+        if (temp->equals(data, comparator))
+        {
             return index;
         }
         index += 1;
@@ -334,14 +416,18 @@ int LinkedList<T>::indexOf(T data,int (*comparator)(T, T)) {
 };
 
 template <typename T>
-int LinkedList<T>::occurences(T data,int (*comparator)(T, T)) {
-    if(start == NULL || start->next == NULL || count == 0) {
+int LinkedList<T>::occurences(T data, int (*comparator)(T, T))
+{
+    if (start == NULL || start->next == NULL || count == 0)
+    {
         return 0;
     }
     int occs = 0;
     NODE<T> *temp = start->next;
-    while(temp != NULL || temp != end) {
-        if(temp->equals(data,comparator)) {
+    while (temp != NULL && temp != end)
+    {
+        if (temp->equals(data, comparator))
+        {
             occs += 1;
         }
         temp = temp->next;
@@ -350,38 +436,105 @@ int LinkedList<T>::occurences(T data,int (*comparator)(T, T)) {
 };
 
 template <typename T>
-int LinkedList<T>::lastIndexOf(T data,int (*comparator)(T, T)) {
-    if(start == NULL || start->next == NULL || count == 0) {
+int LinkedList<T>::lastIndexOf(T data, int (*comparator)(T, T))
+{
+    if (start == NULL || start->next == NULL || count == 0)
+    {
         return -1;
     }
-    int index = 0;
-    int lastIndex = -1;
-    NODE<T> *temp = start->next;
-    while(temp != NULL || temp != end) {
-        if(temp->equals(data,comparator)) {
-            lastIndex = index;
+    int index = count - 1;
+    NODE<T> *temp = end->prev;
+    while (temp != NULL && temp != end)
+    {
+        if (temp->equals(data, comparator))
+        {
+            return index;
         }
-        index += 1;
-        temp = temp->next;
+        index -= 1;
+        temp = temp->prev;
     }
-    return lastIndex;
+    return -1;
 };
 
 template <typename T>
-void LinkedList<T>::update(int index, T data) {
-    if(start == NULL || start->next == NULL || count == 0) {
-        throw "List empty";
-    }else if(index >= count) {
-        throw "Index cannot exceed the size";
+void LinkedList<T>::update(int index, T data)
+{
+    if (start == NULL || start->next == NULL || count == 0)
+    {
+        throw DSAException("EMPTY_LIST");
+    }
+    else if (index >= count)
+    {
+        throw DSAException("INVALID_INDEX");
     }
     int i = 0;
-    NODE<T> *temp = start->next;
-    while(temp != NULL && temp != end) {
-        if(i == index){
+    NODE<T> *temp;
+    bool forward = true;
+    int distance_from_end = count - index;
+    if(index < distance_from_end) {
+        temp = start->next;
+    }else {
+        temp = end->prev;
+        i = count - 1;
+        forward = false;
+    }
+    while (temp != NULL && temp != end)
+    {
+        if (i == index)
+        {
             temp->data = data;
             return;
         }
-        i+=1;
+        if(forward)
+        {
+            i += 1;
+            temp = temp->next;
+        }else {
+            i -= 1;
+            temp = temp->prev;
+        }
+    }
+};
+
+template <typename T>
+void LinkedList<T>::replace(T value, T newvalue, int (*comparator)(T, T))
+{
+    if (start == NULL || start->next == NULL || count == 0)
+    {
+        return;
+    }
+    NODE<T> *temp = start->next;
+    while (temp != NULL && temp != end)
+    {
+        if (temp->equals(value, comparator))
+        {
+            temp->data = newvalue;
+            return;
+        }
         temp = temp->next;
     }
 };
+
+template <typename T>
+void LinkedList<T>::replaceAll(T value, T newvalue, int (*comparator)(T, T))
+{
+    if (start == NULL || start->next == NULL || count == 0)
+    {
+        return;
+    }
+    NODE<T> *temp = start->next;
+    while (temp != NULL && temp != end)
+    {
+        if (temp->equals(value, comparator))
+        {
+            temp->data = newvalue;
+        }
+        temp = temp->next;
+    }
+};
+
+/*template <typename T>
+void LinkedList<T>::concat(LinkedList<T>... items)
+{
+    cout << "NOT IMPLEMENTED YET" ;
+}*/

@@ -2,6 +2,27 @@
 
 using namespace std;
 
+class DSAException : public exception
+{
+    string msg_;
+
+public:
+    virtual const char* what() const throw()
+    { return msg_.c_str(); }
+
+    explicit DSAException(const string& msg) throw()
+    : msg_(msg)
+    {}
+
+    virtual ~DSAException() throw()
+    {}
+};
+
+enum What {
+    INVALID_INDEX,
+    EMPTY_LIST
+};
+
 template <typename T>
 struct NODE
 {
